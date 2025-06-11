@@ -1,0 +1,547 @@
+
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aventura Portuguesa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0f9ff;
+            background-image: radial-gradient(#60a5fa 0.5px, transparent 0.5px), radial-gradient(#60a5fa 0.5px, #f0f9ff 0.5px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+            transform: scale(1.05);
+        }
+        .btn-secondary {
+            background-color: #f97316;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #ea580c;
+            transform: scale(1.05);
+        }
+        .option {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .option:hover {
+            transform: scale(1.03);
+        }
+        .option.correct {
+            background-color: #10b981;
+            color: white;
+        }
+        .option.incorrect {
+            background-color: #ef4444;
+            color: white;
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f97316;
+            opacity: 0;
+        }
+        @keyframes fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-blue-600 mb-2">Aventura Portuguesa</h1>
+            <p class="text-xl text-gray-600">Aprenda português de forma divertida!</p>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Welcome Screen -->
+            <div id="welcome-screen" class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                <div class="flex flex-col md:flex-row items-center">
+                    <div class="md:w-1/2 mb-6 md:mb-0">
+                        <svg class="w-full h-64" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="100" cy="100" r="80" fill="#3b82f6" opacity="0.2"/>
+                            <path d="M65,80 Q100,40 135,80" stroke="#3b82f6" stroke-width="4" fill="none"/>
+                            <circle cx="65" cy="80" r="10" fill="#f97316"/>
+                            <circle cx="135" cy="80" r="10" fill="#f97316"/>
+                            <path d="M80,120 Q100,140 120,120" stroke="#3b82f6" stroke-width="4" fill="none"/>
+                            <text x="100" y="170" text-anchor="middle" font-size="24" font-weight="bold" fill="#3b82f6">PT-BR</text>
+                        </svg>
+                    </div>
+                    <div class="md:w-1/2 md:pl-8">
+                        <h2 class="text-3xl font-bold text-blue-600 mb-4">Bem-vindo!</h2>
+                        <p class="text-gray-700 mb-6">Escolha um modo de jogo para começar sua aventura no aprendizado do português brasileiro.</p>
+                        <div class="flex flex-col space-y-4">
+                            <button onclick="startGame('vocabulary')" class="btn-primary py-3 px-6 rounded-lg font-bold text-lg">Vocabulário</button>
+                            <button onclick="startGame('grammar')" class="btn-secondary py-3 px-6 rounded-lg font-bold text-lg">Gramática</button>
+                            <button onclick="startGame('expressions')" class="bg-purple-500 hover:bg-purple-600 text-white py-3 px-6 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105">Expressões</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Screen -->
+            <div id="game-screen" class="hidden">
+                <!-- Progress Bar -->
+                <div class="bg-gray-200 rounded-full h-4 mb-6">
+                    <div id="progress-bar" class="bg-blue-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+
+                <!-- Score and Level -->
+                <div class="flex justify-between mb-6">
+                    <div class="bg-blue-100 rounded-lg px-4 py-2">
+                        <span class="font-bold text-blue-600">Pontos:</span>
+                        <span id="score" class="text-blue-600">0</span>
+                    </div>
+                    <div class="bg-orange-100 rounded-lg px-4 py-2">
+                        <span class="font-bold text-orange-600">Nível:</span>
+                        <span id="level" class="text-orange-600">1</span>
+                    </div>
+                </div>
+
+                <!-- Question Card -->
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                    <h3 id="question-title" class="text-2xl font-bold text-blue-600 mb-4">Pergunta</h3>
+                    <p id="question-text" class="text-gray-700 text-lg mb-6">Texto da pergunta aqui...</p>
+                    
+                    <!-- Options -->
+                    <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <!-- Options will be inserted here -->
+                    </div>
+
+                    <!-- Feedback -->
+                    <div id="feedback" class="hidden p-4 rounded-lg mb-6">
+                        <p id="feedback-text" class="text-lg"></p>
+                    </div>
+
+                    <!-- Next Button -->
+                    <button id="next-button" onclick="nextQuestion()" class="hidden btn-primary py-3 px-6 rounded-lg font-bold text-lg w-full">Próxima Pergunta</button>
+                </div>
+            </div>
+
+            <!-- Results Screen -->
+            <div id="results-screen" class="hidden bg-white rounded-2xl shadow-lg p-8 text-center">
+                <h2 class="text-3xl font-bold text-blue-600 mb-4">Parabéns!</h2>
+                <div class="mb-6">
+                    <svg class="w-32 h-32 mx-auto" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="45" fill="#3b82f6" opacity="0.2"/>
+                        <path d="M25,50 L40,65 L75,30" stroke="#10b981" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <p class="text-xl text-gray-700 mb-4">Você completou o desafio!</p>
+                <p class="text-2xl font-bold text-blue-600 mb-6">Pontuação Final: <span id="final-score">0</span></p>
+                <div class="flex flex-col space-y-4">
+                    <button onclick="restartGame()" class="btn-primary py-3 px-6 rounded-lg font-bold text-lg">Jogar Novamente</button>
+                    <button onclick="goToHome()" class="btn-secondary py-3 px-6 rounded-lg font-bold text-lg">Voltar ao Início</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-gray-500">
+            <p>Aventura Portuguesa &copy; 2023 - Aprenda português brincando!</p>
+        </footer>
+    </div>
+
+    <script>
+        // Game state
+        const gameState = {
+            currentMode: '',
+            currentQuestion: 0,
+            score: 0,
+            level: 1,
+            questions: {
+                vocabulary: [
+                    {
+                        title: "Qual é o significado de 'Saudade'?",
+                        text: "Escolha a melhor definição para esta palavra única do português:",
+                        options: [
+                            "Um tipo de comida brasileira",
+                            "Um sentimento de falta ou nostalgia",
+                            "Um estilo de dança tradicional",
+                            "Um feriado nacional"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        title: "Complete a frase:",
+                        text: "'Ele está ___________ para a prova.'",
+                        options: [
+                            "estudando",
+                            "estudar",
+                            "estuda",
+                            "estudado"
+                        ],
+                        correct: 0
+                    },
+                    {
+                        title: "Qual é o sinônimo de 'Bonito'?",
+                        text: "Escolha a palavra que tem o mesmo significado:",
+                        options: [
+                            "Feio",
+                            "Grande",
+                            "Belo",
+                            "Rápido"
+                        ],
+                        correct: 2
+                    },
+                    {
+                        title: "O que significa 'Cafuné'?",
+                        text: "Esta é uma palavra tipicamente brasileira:",
+                        options: [
+                            "Um tipo de café",
+                            "Carinho feito com a ponta dos dedos na cabeça",
+                            "Uma dança típica",
+                            "Um prato típico do nordeste"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        title: "Qual é o antônimo de 'Alegria'?",
+                        text: "Escolha a palavra com significado oposto:",
+                        options: [
+                            "Felicidade",
+                            "Contentamento",
+                            "Tristeza",
+                            "Animação"
+                        ],
+                        correct: 2
+                    }
+                ],
+                grammar: [
+                    {
+                        title: "Qual é a conjugação correta?",
+                        text: "Eu ___ (ir) ao cinema ontem.",
+                        options: [
+                            "vou",
+                            "fui",
+                            "irei",
+                            "ia"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        title: "Identifique o plural correto:",
+                        text: "O plural de 'chapéu' é:",
+                        options: [
+                            "chapéis",
+                            "chapéus",
+                            "chapéls",
+                            "chapéues"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        title: "Qual é o feminino de 'ator'?",
+                        text: "Complete a frase: 'Ela é uma ótima ____.'",
+                        options: [
+                            "atora",
+                            "atriz",
+                            "atoresa",
+                            "atora"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        title: "Identifique a frase com pontuação correta:",
+                        text: "Qual opção está corretamente pontuada?",
+                        options: [
+                            "Maria, disse que, vai viajar amanhã.",
+                            "Maria disse, que vai viajar, amanhã.",
+                            "Maria disse que vai viajar amanhã.",
+                            "Maria disse que, vai viajar, amanhã."
+                        ],
+                        correct: 2
+                    },
+                    {
+                        title: "Qual é o tempo verbal da frase?",
+                        text: "'Eu tinha estudado antes da prova.'",
+                        options: [
+                            "Presente",
+                            "Pretérito perfeito",
+                            "Pretérito imperfeito",
+                            "Pretérito mais-que-perfeito"
+                        ],
+                        correct: 3
+                    }
+                ],
+                expressions: [
+                    {
+                        title: "O que significa a expressão 'Pegar no pé'?",
+                        text: "Em qual situação você usaria esta expressão?",
+                        options: [
+                            "Segurar o pé de alguém",
+                            "Cobrar ou pressionar alguém insistentemente",
+                            "Caminhar descalço",
+                            "Tropeçar em algo"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        title: "Complete a expressão:",
+                        text: "'Quem não arrisca, não ____.'",
+                        options: [
+                            "ganha",
+                            "petisca",
+                            "vive",
+                            "chora"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        title: "O que significa 'Dar com os burros n'água'?",
+                        text: "Esta expressão é usada quando alguém:",
+                        options: [
+                            "Encontra uma solução inesperada",
+                            "Se depara com um obstáculo intransponível",
+                            "Descobre algo valioso",
+                            "Faz uma viagem longa"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        title: "Complete a expressão:",
+                        text: "'Quem tem boca vai a ____.'",
+                        options: [
+                            "festa",
+                            "Roma",
+                            "luta",
+                            "escola"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        title: "O que significa 'Fazer tempestade em copo d'água'?",
+                        text: "Esta expressão se refere a:",
+                        options: [
+                            "Criar um problema grande onde não existe",
+                            "Resolver um problema difícil",
+                            "Prever o tempo com precisão",
+                            "Economizar água"
+                        ],
+                        correct: 0
+                    }
+                ]
+            }
+        };
+
+        // Start the game
+        function startGame(mode) {
+            gameState.currentMode = mode;
+            gameState.currentQuestion = 0;
+            gameState.score = 0;
+            gameState.level = 1;
+            
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            updateScore();
+            updateLevel();
+            loadQuestion();
+        }
+
+        // Load current question
+        function loadQuestion() {
+            const questions = gameState.questions[gameState.currentMode];
+            if (gameState.currentQuestion >= questions.length) {
+                showResults();
+                return;
+            }
+            
+            const question = questions[gameState.currentQuestion];
+            document.getElementById('question-title').textContent = question.title;
+            document.getElementById('question-text').textContent = question.text;
+            
+            // Update progress bar
+            const progress = ((gameState.currentQuestion + 1) / questions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            
+            // Clear options
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            // Add options
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option bg-blue-50 hover:bg-blue-100 p-4 rounded-lg shadow';
+                optionElement.textContent = option;
+                optionElement.onclick = () => selectOption(index);
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            // Hide feedback and next button
+            document.getElementById('feedback').classList.add('hidden');
+            document.getElementById('next-button').classList.add('hidden');
+        }
+
+        // Select an option
+        function selectOption(index) {
+            const questions = gameState.questions[gameState.currentMode];
+            const question = questions[gameState.currentQuestion];
+            const options = document.querySelectorAll('.option');
+            
+            // Disable all options
+            options.forEach(option => {
+                option.onclick = null;
+                option.classList.remove('hover:bg-blue-100');
+            });
+            
+            // Mark correct and selected options
+            options[question.correct].classList.add('correct');
+            if (index !== question.correct) {
+                options[index].classList.add('incorrect');
+            }
+            
+            // Show feedback
+            const feedback = document.getElementById('feedback');
+            const feedbackText = document.getElementById('feedback-text');
+            
+            if (index === question.correct) {
+                feedback.className = 'bg-green-100 p-4 rounded-lg mb-6';
+                feedbackText.textContent = 'Correto! Muito bem!';
+                feedbackText.className = 'text-lg text-green-700';
+                gameState.score += 10;
+                updateScore();
+                createConfetti();
+            } else {
+                feedback.className = 'bg-red-100 p-4 rounded-lg mb-6';
+                feedbackText.textContent = 'Incorreto. A resposta certa está destacada.';
+                feedbackText.className = 'text-lg text-red-700';
+            }
+            
+            feedback.classList.remove('hidden');
+            document.getElementById('next-button').classList.remove('hidden');
+            
+            // Level up every 3 correct answers
+            if (gameState.score % 30 === 0 && gameState.score > 0) {
+                gameState.level++;
+                updateLevel();
+                showLevelUpMessage();
+            }
+        }
+
+        // Next question
+        function nextQuestion() {
+            gameState.currentQuestion++;
+            loadQuestion();
+        }
+
+        // Update score display
+        function updateScore() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('final-score').textContent = gameState.score;
+        }
+
+        // Update level display
+        function updateLevel() {
+            document.getElementById('level').textContent = gameState.level;
+        }
+
+        // Show level up message
+        function showLevelUpMessage() {
+            const feedback = document.getElementById('feedback');
+            const feedbackText = document.getElementById('feedback-text');
+            
+            feedback.className = 'bg-purple-100 p-4 rounded-lg mb-6';
+            feedbackText.textContent = `Parabéns! Você subiu para o nível ${gameState.level}!`;
+            feedbackText.className = 'text-lg text-purple-700 font-bold';
+            
+            feedback.classList.remove('hidden');
+            createConfetti();
+        }
+
+        // Show results screen
+        function showResults() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.remove('hidden');
+            document.getElementById('final-score').textContent = gameState.score;
+            createConfetti();
+        }
+
+        // Restart game
+        function restartGame() {
+            startGame(gameState.currentMode);
+        }
+
+        // Go to home screen
+        function goToHome() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('results-screen').classList.add('hidden');
+            document.getElementById('welcome-screen').classList.remove('hidden');
+        }
+
+        // Create confetti effect
+        function createConfetti() {
+            const container = document.getElementById('app');
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                
+                // Random position
+                const left = Math.random() * 100;
+                confetti.style.left = `${left}%`;
+                
+                // Random color
+                const colors = ['#3b82f6', '#10b981', '#f97316', '#8b5cf6', '#ef4444', '#f59e0b'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.backgroundColor = color;
+                
+                // Random size
+                const size = Math.random() * 10 + 5;
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                
+                // Random shape
+                const shapes = ['circle', 'square'];
+                const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                if (shape === 'circle') {
+                    confetti.style.borderRadius = '50%';
+                }
+                
+                // Animation
+                const duration = Math.random() * 3 + 2;
+                confetti.style.animation = `fall ${duration}s linear forwards`;
+                
+                container.appendChild(confetti);
+                
+                // Remove after animation
+                setTimeout(() => {
+                    confetti.remove();
+                }, duration * 1000);
+            }
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'94e35f3e3374f62e',t:'MTc0OTY2ODY0NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
